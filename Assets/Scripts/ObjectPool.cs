@@ -3,26 +3,29 @@ using System.Collections.Generic;
 
 public class ObjectPool<T>
 {
-    private readonly Func<T> CreateObject;
+    private readonly T[] _environments;
+
+    private readonly Func<T, T> CreateObject;
     private readonly Action<T> DisableObject;
     private readonly Action<T> EnableObject;
 
-    private Queue<T> _pool;
-    private List<T> _active;
+    private Queue<T> _pool = new();
+    private List<T> _active = new();
 
-    public ObjectPool(Func<T> createObject, Action<T> enableObject, Action<T> disableObject, int startCount)
+    public ObjectPool(T[] environments, Func<T, T> createObject, Action<T> enableObject, Action<T> disableObject)
     {
+        _environments = environments;
         CreateObject = createObject;
         EnableObject = enableObject;
         DisableObject = disableObject;
 
-        for (int i = 0; i < startCount; i++)
-            Return(createObject());
+        for (int i = 0; i < _environments.Length; i++)
+            Return(CreateObject(_environments[i]));
     }
 
     public T Get()
     {
-        T obj = _pool.Count < 0 ? CreateObject() : _pool.Dequeue();
+        T obj = _pool.Count < 1 ? CreateObject(_environments[UnityEngine.Random.Range(0, _environments.Length - 1)]) : _pool.Dequeue();
         EnableObject(obj);
 
         return obj;
