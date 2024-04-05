@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class EnvironmentController : MonoBehaviour
+public class EnvironmentController : MonoBehaviour          // –азделить на 2 контроллера, Environment вынести в отдельный класс который будет использовать эти 2 контроллера и туда добавить ProjectileController?
 {
     private const int InitialNumberOfPlatforms = 6;
     private readonly Vector2 StartCoordinatesGround = new Vector2(13f, -4.5f);
@@ -45,46 +45,46 @@ public class EnvironmentController : MonoBehaviour
         }
     }
 
-    private Environment CreateEnvironment(Environment prefab)
+    private Environment CreateEnvironment(Environment prefab)       // ¬ родитель
     {
         var item = Instantiate<Environment>(prefab);
         item.transform.SetParent(transform);
 
         return item;
     }
-    private void EnablePlatform(Environment environment)
+    private void EnablePlatform(Environment environment)            // ѕереопределение и в родитель
     {
         environment.gameObject.SetActive(true);
         environment.Outdated += OnPlatformOutdated;
     }
 
-    private void DisablePlatform(Environment environment)
+    private void DisablePlatform(Environment environment)           // ѕереопределение и в родитель
     {
         environment.Outdated -= OnPlatformOutdated;
         environment.gameObject.SetActive(false);
         environment.transform.position = Vector3.zero;
     }
 
-    private void OnPlatformOutdated(Environment environment)
+    private void OnPlatformOutdated(Environment environment)    // OnChanged - в родитель
     {
         _platformPool.Return(environment);
         _platformPool.Get().Mover.SetStartData(StartCoordinatesGround, _speedGround);
     }
 
-    private void EnableWall(Environment environment)
+    private void EnableWall(Environment environment)            // ѕереопределение и в родитель
     {
         environment.gameObject.SetActive(true);
         environment.Outdated += OnWallOutdated;
     }
 
-    private void DisableWall(Environment environment)
+    private void DisableWall(Environment environment)           // ѕереопределение и в родитель
     {
         environment.Outdated -= OnWallOutdated;
         environment.gameObject.SetActive(false);
         environment.transform.position = Vector3.zero;
     }
 
-    private void OnWallOutdated(Environment environment)
+    private void OnWallOutdated(Environment environment)    // OnChanged - в родитель
     {
         _wallPool.Return(environment);
     }
@@ -93,9 +93,10 @@ public class EnvironmentController : MonoBehaviour
     {
         const float MinDelay = 2f;
         const float MaxDelay = 5f;
+        const float MinHeight = -8f;
 
         float timer = 0;
-        float timePassed = Random.Range(MinDelay, MaxDelay);
+        float timePassed = 1f;
         bool isWork = true;
 
         while (isWork)
@@ -103,7 +104,8 @@ public class EnvironmentController : MonoBehaviour
             if (timer > timePassed)
             {
                 timer = 0;
-                _wallPool.Get().Mover.SetStartData(StartCoordinatesGround, _speedGround);
+                Vector2 newPosition = new Vector2(StartCoordinatesGround.x, Random.Range(MinHeight, StartCoordinatesGround.y));
+                _wallPool.Get().Mover.SetStartData(newPosition, _speedGround);
                 timePassed = Random.Range(MinDelay, MaxDelay);
             }
 

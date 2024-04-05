@@ -50,6 +50,34 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""Fight"",
+            ""id"": ""a93b3811-5eb0-4166-8905-33430fbfde78"",
+            ""actions"": [
+                {
+                    ""name"": ""Shoot"",
+                    ""type"": ""Button"",
+                    ""id"": ""d2a88420-1caf-4384-95b7-eb21356e4deb"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""8df49d25-ad18-4eae-99dc-7e8f3dea4dfd"",
+                    ""path"": ""<Keyboard>/a"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""KeyboardAndMouse"",
+                    ""action"": ""Shoot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": [
@@ -74,6 +102,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         // Move
         m_Move = asset.FindActionMap("Move", throwIfNotFound: true);
         m_Move_FlyUp = m_Move.FindAction("FlyUp", throwIfNotFound: true);
+        // Fight
+        m_Fight = asset.FindActionMap("Fight", throwIfNotFound: true);
+        m_Fight_Shoot = m_Fight.FindAction("Shoot", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -177,6 +208,52 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         }
     }
     public MoveActions @Move => new MoveActions(this);
+
+    // Fight
+    private readonly InputActionMap m_Fight;
+    private List<IFightActions> m_FightActionsCallbackInterfaces = new List<IFightActions>();
+    private readonly InputAction m_Fight_Shoot;
+    public struct FightActions
+    {
+        private @PlayerInputActions m_Wrapper;
+        public FightActions(@PlayerInputActions wrapper) { m_Wrapper = wrapper; }
+        public InputAction @Shoot => m_Wrapper.m_Fight_Shoot;
+        public InputActionMap Get() { return m_Wrapper.m_Fight; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(FightActions set) { return set.Get(); }
+        public void AddCallbacks(IFightActions instance)
+        {
+            if (instance == null || m_Wrapper.m_FightActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_FightActionsCallbackInterfaces.Add(instance);
+            @Shoot.started += instance.OnShoot;
+            @Shoot.performed += instance.OnShoot;
+            @Shoot.canceled += instance.OnShoot;
+        }
+
+        private void UnregisterCallbacks(IFightActions instance)
+        {
+            @Shoot.started -= instance.OnShoot;
+            @Shoot.performed -= instance.OnShoot;
+            @Shoot.canceled -= instance.OnShoot;
+        }
+
+        public void RemoveCallbacks(IFightActions instance)
+        {
+            if (m_Wrapper.m_FightActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        public void SetCallbacks(IFightActions instance)
+        {
+            foreach (var item in m_Wrapper.m_FightActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_FightActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    public FightActions @Fight => new FightActions(this);
     private int m_KeyboardAndMouseSchemeIndex = -1;
     public InputControlScheme KeyboardAndMouseScheme
     {
@@ -189,5 +266,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     public interface IMoveActions
     {
         void OnFlyUp(InputAction.CallbackContext context);
+    }
+    public interface IFightActions
+    {
+        void OnShoot(InputAction.CallbackContext context);
     }
 }
