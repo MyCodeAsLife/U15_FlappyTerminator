@@ -11,7 +11,17 @@ public class ProjectileController : MonoBehaviour           // Создать общий кла
         _ammoPool = new ObjectPool<Bullet>(_prefabsBullet, CreateBullet, EnableBullet, DisableBullet);
     }
 
+    private void OnDisable()
+    {
+        _ammoPool.ReturnAll();
+    }
+
     public Bullet GetAmmo() => _ammoPool.Get();
+
+    //public void Restart()
+    //{
+    //    _ammoPool.ReturnAll();
+    //}
 
     private Bullet CreateBullet(Bullet prefab)          // В родитель
     {

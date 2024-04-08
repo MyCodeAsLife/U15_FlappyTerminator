@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Environment : MonoBehaviour
 {
-    private const float EndPosX = -18f;
+    private const float MaxLifeDistance = 18f;
 
     private Mover _mover;
 
@@ -17,9 +17,9 @@ public class Environment : MonoBehaviour
         _mover = this.AddComponent<Mover>();
     }
 
-    private void Update()
+    private void LateUpdate()
     {
-        if (transform.position.x <= EndPosX)
+        if (Vector2.Distance(Vector2.zero, transform.position) > MaxLifeDistance)
             Outdated?.Invoke(this);
     }
 }

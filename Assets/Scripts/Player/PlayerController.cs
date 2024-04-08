@@ -47,9 +47,9 @@ public class PlayerController : MonoBehaviour
         transform.rotation = Quaternion.Lerp(transform.rotation, _minRotation, _rotationSpeed * Time.deltaTime);
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)     // Запилить смерть тут
     {
-        Debug.Log(collision.gameObject.name);
+
     }
 
     private void AddForce(InputAction.CallbackContext obj)
@@ -59,12 +59,12 @@ public class PlayerController : MonoBehaviour
         transform.rotation = _maxRotation;
     }
 
-    private void Shoot(InputAction.CallbackContext obj)                                // Стрельба тут
+    private void Shoot(InputAction.CallbackContext obj)
     {
         var bullet = _projectileController.GetAmmo();
-        float newPosX = transform.position.x + GetComponent<CapsuleCollider2D>().size.x + bullet.Collider.size.x;
+        float newPosX = transform.position.x + GetComponent<CapsuleCollider2D>().size.x / 2 + bullet.Collider.size.x;
         Vector2 startBulletPosition = new Vector2(newPosX, transform.position.y);
 
-        bullet.Mover.SetStartData(startBulletPosition, -4f);                    // Магические числа
+        bullet.Mover.SetStartData(startBulletPosition, transform.rotation, -4f);                    // Магические числа (скорость пули)
     }
 }

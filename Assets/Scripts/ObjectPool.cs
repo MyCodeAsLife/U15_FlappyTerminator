@@ -27,12 +27,14 @@ public class ObjectPool<T>
     {
         T obj = _pool.Count < 1 ? CreateObject(_environments[UnityEngine.Random.Range(0, _environments.Length - 1)]) : _pool.Dequeue();
         EnableObject(obj);
+        _active.Add(obj);
 
         return obj;
     }
     public void Return(T obj)
     {
         DisableObject(obj);
+        _active.Remove(obj);
         _pool.Enqueue(obj);
     }
 
