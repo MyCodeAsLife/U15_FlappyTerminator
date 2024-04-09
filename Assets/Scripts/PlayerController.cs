@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,19 +8,23 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float _rotationSpeed;
     [SerializeField] private float _minRotationZ;
     [SerializeField] private float _maxRotationZ;
+    [SerializeField] private float _bulletSpeed;
 
+    private Rigidbody2D _rigidbody;
+    private PlayerInputActions _inputActions;
     private ProjectileController _projectileController;
     private Quaternion _minRotation;
     private Quaternion _maxRotation;
+    private Vector2 _basePosition;
 
-    private PlayerInputActions _inputActions;
-    private Rigidbody2D _rigidbody;
+    public event Action Hited;
 
     private void Awake()
     {
         _projectileController = GetComponentInParent<ProjectileController>();
         _inputActions = new PlayerInputActions();
         _rigidbody = GetComponent<Rigidbody2D>();
+        _basePosition = new Vector2(-6f, 0f);
     }
 
     private void OnEnable()
@@ -47,9 +52,10 @@ public class PlayerController : MonoBehaviour
         transform.rotation = Quaternion.Lerp(transform.rotation, _minRotation, _rotationSpeed * Time.deltaTime);
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)     // Запилить смерть тут
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-
+        Hited?.Invoke();
+        transform.position = _basePosition;
     }
 
     private void AddForce(InputAction.CallbackContext obj)
@@ -61,10 +67,11 @@ public class PlayerController : MonoBehaviour
 
     private void Shoot(InputAction.CallbackContext obj)
     {
-        var bullet = _projectileController.GetAmmo();
-        float newPosX = transform.position.x + GetComponent<CapsuleCollider2D>().size.x / 2 + bullet.Collider.size.x;
+        const float Half = 0.5f;
+        var bullet = _projectileController.GetAmmo() as Bullet;
+        float newPosX = transform.position.x + GetComponent<CapsuleCollider2D>().size.x * Half + bullet.Collider.size.x;
         Vector2 startBulletPosition = new Vector2(newPosX, transform.position.y);
 
-        bullet.Mover.SetStartData(startBulletPosition, transform.rotation, -4f);                    // Магические числа (скорость пули)
+        bullet.Mover.SetStartData(startBulletPosition, transform.rotation, _bulletSpeed);
     }
 }

@@ -1,14 +1,14 @@
 using UnityEngine;
 
-public class ProjectileController : MonoBehaviour           // Создать общий класс родитель с EnvironmentController
+public class ProjectileController : BaseController
 {
-    private ObjectPool<Bullet> _ammoPool;
+    private ObjectPool<BaseObject> _ammoPool;
     private Bullet[] _prefabsBullet;
 
     private void Awake()
     {
         _prefabsBullet = Resources.LoadAll<Bullet>("");
-        _ammoPool = new ObjectPool<Bullet>(_prefabsBullet, CreateBullet, EnableBullet, DisableBullet);
+        _ammoPool = new ObjectPool<BaseObject>(_prefabsBullet, base.Create, Enable, Disable);
     }
 
     private void OnDisable()
@@ -16,36 +16,22 @@ public class ProjectileController : MonoBehaviour           // Создать общий кла
         _ammoPool.ReturnAll();
     }
 
-    public Bullet GetAmmo() => _ammoPool.Get();
+    public BaseObject GetAmmo() => _ammoPool.Get();
 
-    //public void Restart()
-    //{
-    //    _ammoPool.ReturnAll();
-    //}
-
-    private Bullet CreateBullet(Bullet prefab)          // В родитель
+    protected override void Enable(BaseObject environment)
     {
-        var item = Instantiate<Bullet>(prefab);
-        item.transform.SetParent(transform);
-
-        return item;
+        base.Enable(environment);
+        (environment as Bullet).Disabled += OnChange;
     }
 
-    private void EnableBullet(Bullet bullet)            // Переопределение и в родитель
+    protected override void Disable(BaseObject environment)
     {
-        bullet.gameObject.SetActive(true);
-        bullet.Hited += OnChanged;
+        (environment as Bullet).Disabled -= OnChange;
+        base.Disable(environment);
     }
 
-    private void DisableBullet(Bullet bullet)            // Переопределение и в родитель
+    private void OnChange(BaseObject environment)
     {
-        bullet.Hited -= OnChanged;
-        bullet.gameObject.SetActive(false);
-        bullet.transform.position = Vector3.zero;
-    }
-
-    private void OnChanged(Bullet bullet)                            // OnChanged - переопределение и в родитель
-    {
-        _ammoPool.Return(bullet);
+        _ammoPool.Return(environment);
     }
 }

@@ -1,17 +1,17 @@
 using System.Collections;
 using UnityEngine;
 
-public class EnvironmentController : MonoBehaviour          // Разделить на 2 контроллера, Environment вынести в отдельный класс который будет использовать эти 2 контроллера и туда добавить ProjectileController?
+public class EnvironmentController : BaseController
 {
     private const int InitialNumberOfPlatforms = 6;
-    private readonly Vector2 InitialCoordinatesObstacle = new Vector2(13f, -4.5f);
+    private readonly Vector2 InitialCoordinatesObstacle = new Vector2(15f, -4.5f);
 
     private Environment[] _prefabsGround;
     private Environment[] _prefabsWall;
     private Environment[] _prefabsCloud;
-    private ObjectPool<Environment> _platformPool;
-    private ObjectPool<Environment> _wallPool;
-    private ObjectPool<Environment> _cloudPool;
+    private ObjectPool<BaseObject> _platformPool;
+    private ObjectPool<BaseObject> _wallPool;
+    private ObjectPool<BaseObject> _cloudPool;
     private Quaternion _initialWallRotation;
 
     private Coroutine _wallSpawn;
@@ -27,9 +27,9 @@ public class EnvironmentController : MonoBehaviour          // Разделить на 2 ко
         _prefabsGround = Resources.LoadAll<Environment>("Prefabs/Grounds");
         _prefabsWall = Resources.LoadAll<Environment>("Prefabs/Walls");
         _prefabsCloud = Resources.LoadAll<Environment>("Prefabs/Clouds");
-        _platformPool = new ObjectPool<Environment>(_prefabsGround, CreateEnvironment, EnablePlatform, DisablePlatform);
-        _wallPool = new ObjectPool<Environment>(_prefabsWall, CreateEnvironment, EnableWall, DisableWall);
-        _cloudPool = new ObjectPool<Environment>(_prefabsCloud, CreateEnvironment, EnableCloud, DisableCloud);            // Переименовать методы, нужен отдельный метод на деспаун и возвращение в пулл
+        _platformPool = new ObjectPool<BaseObject>(_prefabsGround, base.Create, EnablePlatform, DisablePlatform);
+        _wallPool = new ObjectPool<BaseObject>(_prefabsWall, base.Create, EnableWall, DisableWall);
+        _cloudPool = new ObjectPool<BaseObject>(_prefabsCloud, base.Create, EnableCloud, DisableCloud);
 
         _initialWallRotation = _prefabsWall[0].transform.rotation;
         _speedGround = 5f;
@@ -53,93 +53,69 @@ public class EnvironmentController : MonoBehaviour          // Разделить на 2 ко
         if (_cloudSpawn != null)
             StopCoroutine(_cloudSpawn);
 
-        //_platformPool.ReturnAll();
         _wallPool.ReturnAll();
         _cloudPool.ReturnAll();
     }
-
-    //public void Restart()
-    //{
-    //    StopCoroutine(WallSpawn());
-    //    StopCoroutine(CloudSpawn());
-    //    _platformPool.ReturnAll();
-    //    _wallPool.ReturnAll();
-    //    _cloudPool.ReturnAll();
-
-    //    InitialCreationPlatforms();
-    //    StartCoroutine(WallSpawn());
-    //    StartCoroutine(CloudSpawn());
-    //}
 
     private void InitialCreationPlatforms()
     {
         for (int i = 0; i < InitialNumberOfPlatforms; i++)
         {
-            var platform = _platformPool.Get();
+            var platform = _platformPool.Get() as Environment;
             platform.Outdated += OnPlatformOutdated;
             platform.Mover.SetStartData(new Vector2(_startCoordinatesX[i], InitialCoordinatesObstacle.y), transform.rotation, _speedGround);
             platform.gameObject.SetActive(true);
         }
     }
 
-    private Environment CreateEnvironment(Environment prefab)       // В родитель
+    private void EnablePlatform(BaseObject environment)
     {
-        var item = Instantiate<Environment>(prefab);
-        item.transform.SetParent(transform);
-
-        return item;
-    }
-    private void EnablePlatform(Environment environment)            // Переопределение и в родитель
-    {
-        environment.gameObject.SetActive(true);
-        environment.Outdated += OnPlatformOutdated;
+        base.Enable(environment);
+        (environment as Environment).Outdated += OnPlatformOutdated;
     }
 
-    private void DisablePlatform(Environment environment)           // Переопределение и в родитель
+    private void DisablePlatform(BaseObject environment)
     {
-        environment.Outdated -= OnPlatformOutdated;
-        environment.gameObject.SetActive(false);
-        environment.transform.position = Vector3.zero;
+        (environment as Environment).Outdated -= OnPlatformOutdated;
+        base.Disable(environment);
     }
 
-    private void OnPlatformOutdated(Environment environment)    // OnChanged - в родитель
+    private void OnPlatformOutdated(BaseObject environment)
     {
         _platformPool.Return(environment);
-        _platformPool.Get().Mover.SetStartData(InitialCoordinatesObstacle, transform.rotation, _speedGround);
+        (_platformPool.Get() as Environment).Mover.SetStartData(InitialCoordinatesObstacle, transform.rotation, _speedGround);
     }
 
-    private void EnableWall(Environment environment)            // Переопределение и в родитель
+    private void EnableWall(BaseObject environment)
     {
-        environment.gameObject.SetActive(true);
-        environment.Outdated += OnWallOutdated;
+        base.Enable(environment);
+        (environment as Environment).Outdated += OnWallOutdated;
     }
 
-    private void DisableWall(Environment environment)           // Переопределение и в родитель
+    private void DisableWall(BaseObject environment)
     {
-        environment.Outdated -= OnWallOutdated;
-        environment.gameObject.SetActive(false);
-        environment.transform.position = Vector3.zero;
+        (environment as Environment).Outdated -= OnWallOutdated;
+        base.Disable(environment);
     }
 
-    private void OnWallOutdated(Environment environment)    // OnChanged - в родитель
+    private void OnWallOutdated(BaseObject environment)
     {
         _wallPool.Return(environment);
     }
 
-    private void EnableCloud(Environment environment)            // Переопределение и в родитель
+    private void EnableCloud(BaseObject environment)
     {
-        environment.gameObject.SetActive(true);
-        environment.Outdated += OnCloudOutdated;
+        base.Enable(environment);
+        (environment as Environment).Outdated += OnCloudOutdated;
     }
 
-    private void DisableCloud(Environment environment)           // Переопределение и в родитель
+    private void DisableCloud(BaseObject environment)
     {
-        environment.Outdated -= OnCloudOutdated;
-        environment.gameObject.SetActive(false);
-        environment.transform.position = Vector3.zero;
+        (environment as Environment).Outdated -= OnCloudOutdated;
+        base.Disable(environment);
     }
 
-    private void OnCloudOutdated(Environment environment)    // OnChanged - в родитель
+    private void OnCloudOutdated(BaseObject environment)
     {
         _cloudPool.Return(environment);
     }
@@ -180,7 +156,7 @@ public class EnvironmentController : MonoBehaviour          // Разделить на 2 ко
         while (isWork)
         {
             Vector2 newPosition = new Vector2(InitialCoordinatesObstacle.x, Random.Range(0, MaxHeight));
-            var cloud = _cloudPool.Get();
+            var cloud = _cloudPool.Get() as Environment;
             cloud.Mover.SetStartData(newPosition, Quaternion.identity, Random.Range(_minSpeedEnvironment, _maxSpeedEnvironment));
             cloud.transform.localScale = Vector3.one * Random.Range(1, MaxHeight);
 

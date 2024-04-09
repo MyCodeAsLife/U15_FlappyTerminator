@@ -1,11 +1,11 @@
 using System.Collections;
 using UnityEngine;
 
-public class CharacterSpawner : MonoBehaviour
+public class CharacterSpawner : BaseController
 {
     private Explosion _prefabExplosion;
     private CharacterController[] _prefabsCharacter;
-    private ObjectPool<CharacterController> _charactersPool;
+    private ObjectPool<BaseObject> _charactersPool;
     private Coroutine _charactersSpawn;
 
     private float _minSpawnInterval;
@@ -21,7 +21,7 @@ public class CharacterSpawner : MonoBehaviour
     {
         _prefabExplosion = Resources.Load<Explosion>("Prefabs/Explosion");
         _prefabsCharacter = Resources.LoadAll<CharacterController>("Prefabs/Characters");
-        _charactersPool = new ObjectPool<CharacterController>(_prefabsCharacter, CreateEnvironment, EnablePlatform, DisablePlatform);
+        _charactersPool = new ObjectPool<BaseObject>(_prefabsCharacter, base.Create, Enable, Disable);
         _initialCharacterRotation = _prefabsCharacter[0].transform.rotation;
 
         _minSpawnInterval = 1.5f;
@@ -45,37 +45,22 @@ public class CharacterSpawner : MonoBehaviour
         _charactersPool.ReturnAll();
     }
 
-    //public void Restart()
-    //{
-    //    StopCoroutine(CharactersSpawn());
-    //    _charactersPool.ReturnAll();
-    //    StartCoroutine(CharactersSpawn());
-    //}
-
-    private CharacterController CreateEnvironment(CharacterController prefab)       // В родитель
+    protected override void Enable(BaseObject character)
     {
-        var item = Instantiate<CharacterController>(prefab);
-        item.transform.SetParent(transform);
-
-        return item;
-    }
-    private void EnablePlatform(CharacterController character)            // Переопределение и в родитель
-    {
-        character.gameObject.SetActive(true);
-        character.Outdated += OnCharacterOutdated;
+        base.Enable(character);
+        (character as CharacterController).Disabled += OnChange;
     }
 
-    private void DisablePlatform(CharacterController character)           // Переопределение и в родитель
+    protected override void Disable(BaseObject character)
     {
-        character.Outdated -= OnCharacterOutdated;
-        character.gameObject.SetActive(false);
-        character.transform.position = Vector3.zero;
+        (character as CharacterController).Disabled -= OnChange;
+        base.Disable(character);
     }
 
-    private void OnCharacterOutdated(CharacterController character)         // Возврат врага в пулл + респавн нового?   // OnChanged - в родитель вместе с остальными контроллерами
+    private void OnChange(BaseObject character)
     {
         StartCoroutine(Explode(character.transform.position));
-        _charactersPool.Return(character);
+        _charactersPool.Return(character as CharacterController);
     }
 
     private IEnumerator CharactersSpawn()
@@ -93,10 +78,11 @@ public class CharacterSpawner : MonoBehaviour
 
     private IEnumerator Explode(Vector3 position)
     {
+        const float Duration = 1.1f;
         var effect = Instantiate(_prefabExplosion);
         effect.transform.position = position;
 
-        yield return new WaitForSeconds(1.1f);              // Магическое дерьмо
+        yield return new WaitForSeconds(Duration);
         Destroy(effect.gameObject);
     }
 }

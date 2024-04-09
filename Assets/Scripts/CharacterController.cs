@@ -3,11 +3,10 @@ using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class CharacterController : MonoBehaviour
+public class CharacterController : BaseObject
 {
     private const float MaxLifeDistance = 15f;
 
-    private Mover _mover;
     private ProjectileController _projectileController;
     private Coroutine _shooting;
 
@@ -15,9 +14,9 @@ public class CharacterController : MonoBehaviour
     private float _minReloading;
     private float _maxReloading;
 
-    public Action<CharacterController> Outdated;
+    public Action<CharacterController> Disabled;
 
-    public Mover Mover
+    public override Mover Mover
     {
         get
         {
@@ -33,8 +32,6 @@ public class CharacterController : MonoBehaviour
         _bulletSpeed = 4f;
         _minReloading = 2f;
         _maxReloading = 4f;
-
-        _mover.SetStartData(new Vector2(12f, 0f), transform.rotation, -2f);              // ћагические числа, начально задание данных перенести в спавнер
     }
 
     private void OnEnable()
@@ -45,7 +42,7 @@ public class CharacterController : MonoBehaviour
     private void Update()
     {
         if (Vector2.Distance(transform.position, Vector2.zero) > MaxLifeDistance)
-            Outdated?.Invoke(this);            // ƒобавить еще событие дл€ устаревани€ врага или изменить текущее?
+            Disabled?.Invoke(this);
     }
 
     private void OnDisable()
@@ -60,9 +57,9 @@ public class CharacterController : MonoBehaviour
             _mover = this.AddComponent<Mover>();
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)     // ѕри столновении с чем либо   
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-        Outdated?.Invoke(this);
+        Disabled?.Invoke(this);
     }
 
     private IEnumerator Shooting()
@@ -73,7 +70,7 @@ public class CharacterController : MonoBehaviour
         {
             yield return new WaitForSeconds(UnityEngine.Random.Range(_minReloading, _maxReloading));
 
-            var bullet = _projectileController.GetAmmo();
+            var bullet = _projectileController.GetAmmo() as Bullet;
             float newPosX = transform.position.x - GetComponent<CircleCollider2D>().radius - bullet.Collider.size.x;
             Vector2 startBulletPosition = new Vector2(newPosX, transform.position.y);
             bullet.Mover.SetStartData(startBulletPosition, Quaternion.identity, _bulletSpeed);

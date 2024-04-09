@@ -2,18 +2,17 @@ using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(CapsuleCollider2D))]
-public class Bullet : MonoBehaviour
+public class Bullet : BaseObject
 {
     private const float MaxLifeDistance = 15f;
 
     private CapsuleCollider2D _capsuleCollider;
-    private Mover _mover;
 
-    public System.Action<Bullet> Hited;
+    public System.Action<Bullet> Disabled;
 
     public CapsuleCollider2D Collider => _capsuleCollider;
 
-    public Mover Mover
+    public override Mover Mover
     {
         get
         {
@@ -31,12 +30,12 @@ public class Bullet : MonoBehaviour
     private void Update()
     {
         if (Vector2.Distance(transform.position, Vector2.zero) > MaxLifeDistance)
-            Hited?.Invoke(this);            // Добавить еще событие для устаревания снаряда или изменить текущее?
+            Disabled?.Invoke(this);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        Hited?.Invoke(this);
+        Disabled?.Invoke(this);
     }
 
     private void CreateComponentMover()

@@ -2,15 +2,13 @@ using System;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class Environment : MonoBehaviour
+public class Environment : BaseObject
 {
     private const float MaxLifeDistance = 18f;
 
-    private Mover _mover;
-
     public Action<Environment> Outdated;
 
-    public Mover Mover => _mover;
+    public override Mover Mover => _mover;
 
     private void Awake()
     {
